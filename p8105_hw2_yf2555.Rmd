@@ -74,7 +74,104 @@ left_join(precip_df, month_df, by = "month")
 
 ## Data description
 
-This dataset contains information from the Mr. Trashwheel trash collector in Baltimore, Maryland. As trash enters the inner harbor, the trashwheel collects that trash, and stores it in a dumpster. the dataset contains information on year, month, and trash collected, include some specific kinds of trash. There are a total of `r nrow(trashwheel_df)` rows in our final dataset. Additional data sheets include monthly precipitation data. 
+This dataset contains information from the Mr. Trashwheel trash collector in Baltimore, Maryland. As trash enters the inner harbor, the trashwheel collects that trash, and stores it in a dumpster. The dataset contains information on year, month, and trash collected, include some specific kinds of trash. There are a total of `r nrow(trashwheel_df)` rows in our final dataset. Additional data sheets include monthly precipitation data. 
+
+The total precipitation data in 2018 is `r sum(pull(precip_2018, total))` inches. And the median number of sports balls in a dumpster in 2017 is `r median(pull(precip_2017, total))` inches. 
+
+
+
+# Problem 2
+
+## Read and clean the NYC transit dataset. 
+
+```{r}
+transit_df = 
+  read_csv("./dataset/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>%
+  janitor::clean_names() %>%
+  select(line:entry, vending, ada) %>% 
+  mutate(entry = ifelse(entry == "YES", yes = TRUE, no = FALSE))
+```
+
+
+## Dataset description
+
+This dataset contains information of transit system of New York City, NY. The dataset contains information on line, station, routes' name and number, and ADA compliance. For dataset cleaning, I change variable names to snake case, and then select interested variables. I also convert the entry variable to a logical variable. The resulting dataset has `r nrow(transit_df)` rows and `r ncol(transit_df)` columns, yet this dataset is still not tidy enough so far. 
+
+
+## Calculate number of distinct stations. 
+
+```{r}
+transit_distinct = distinct(transit_df, station_name, line)
+```
+
+There are `r nrow(transit_distinct)` distinct stations. 
+
+
+## Calculate number of ADA compliant stations. 
+
+```{r}
+transit_ada = transit_df %>%
+  filter(ada == "TRUE") %>%
+  distinct(station_name, line)
+```
+
+There are `r nrow(transit_ada)` ADA compliant stations. 
+
+
+## Calculate proportion of station entrances/exits without vending. 
+
+```{r}
+transit_distinct_number = nrow(transit_distinct)
+
+transit_vending = transit_df %>%
+  filter(entry == "TRUE", vending == "NO") %>%
+  distinct(station_name, line)
+transit_vending_number = nrow(transit_vending)
+
+transit_vending_prop = transit_vending_number/transit_distinct_number
+```
+
+There are `r transit_vending_prop` proportion of station entrances/exits without vending. 
+
+
+## Reformat data so that route number and route name are distinct variables. 
+
+```{r}
+transit_reformat = transit_df %>%
+  mutate_at(vars(route1 : route11), as.character)%>%
+  pivot_longer(
+    route1 : route11,
+    names_to = "route_name",
+    names_prefix = "route",
+    values_to = "route_number") %>%
+drop_na(route_number)
+```
+
+## Calculate number of distinct stations serve the A train
+
+```{r}
+transit_atrain = transit_reformat %>%
+  filter(route_number == "A") %>%
+  distinct(station_name, line)
+```
+
+There are `r nrow(transit_atrain)` stations serve the A train. 
+
+## Of the stations that serve the A train, calculate the number of ADA compliant. 
+
+```{r}
+transit_ada_atrain = transit_reformat %>%
+  filter(route_number == "A", ada == "TRUE") %>%
+  distinct(station_name, line)
+```
+
+There are `r nrow(transit_ada_atrain)` stations serve the A train with ADA compliant. 
+
+
+
+
+
+
 
 
 
